@@ -34,8 +34,7 @@ Ensure you have the following Python libraries installed in your environment:
 * `numpy`
 * `stable-baselines3`
 * `sb3-contrib`
-'''
-bash
+'''bash
 pip install -r requirements.txt
 '''
 
@@ -62,13 +61,11 @@ The application attempts to load pre-trained models. Ensure these files are pres
 ## 🚀 How to Run
 
 ### Navigate to the project directory
-'''
-bash
+'''bash
 cd Callbreak/Call-Break-The-card-game-in-python/
 '''
 ### Run the application
-'''
-bash
+'''bash
 python app_v6_algo.py
 '''
 ### Open the interface
