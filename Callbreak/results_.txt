@@ -1,0 +1,66 @@
+ Tournament between all the agents and the bot , here the ppo is before self play one , only the rl trained one\
+==================================================\
+Rank  | Agent      | Wins     | Avg Tricks\
+--------------------------------------------------\
+#1    | PPO        | 2890     | 3.17\
+#2    | Heuristic  | 2705     | 3.74\
+#3    | A2C        | 2480     | 3.14\
+#4    | A3C        | 1925     | 2.94\
+Tournament between all the agents and the bot, here the ppo is the final one , after self play training \
+==================================================\
+Rank  | Agent      | Wins     | Avg Tricks\
+--------------------------------------------------\
+#1    | PPO        | 3889     | 3.72\
+#2    | A2C        | 2317     | 3.06\
+#3    | Heuristic  | 2172     | 3.43\
+#4    | A3C        | 1622     | 2.79\
+\
+Tournament between the a2c and bots\
+============================================================\
+           FINAL TOURNAMENT SCOREBOARD           \
+============================================================\
+Rank   | Player Name     | GAMES WON    | TOTAL TRICKS\
+-----------------------------------------------------------------\
+#1     | Bot 3           | 231          | 3519        \
+#2     | Bot 2           | 216          | 3276        \
+#3     | Bot 1           | 272          | 3219        \
+#4     | MCTS (A2C)      | 281          | 2986        \
+--------------------------------------------------------------\
+\
+ Tournament between the a3c and bots\
+============================================================\
+           FINAL TOURNAMENT SCOREBOARD           \
+============================================================\
+Rank   | Player Name     | GAMES WON    | TOTAL TRICKS\
+-----------------------------------------------------------------\
+#1     | Bot 3           | 231          | 3574        \
+#2     | Bot 1           | 266          | 3325        \
+#3     | Bot 2           | 228          | 3276        \
+#4     | MCTS (A3C)      | 275          | 2825        \
+-----------------------------------------------------------------\
+\
+Tournament between the ppo without self play and bots\
+============================================================\
+           FINAL TOURNAMENT SCOREBOARD           \
+============================================================\
+Rank   | Player Name     | GAMES WON    | TOTAL TRICKS\
+-----------------------------------------------------------------\
+#1     | Bot 3           | 215          | 3508        \
+#2     | Bot 1           | 266          | 3300        \
+#3     | Bot 2           | 223          | 3194        \
+#4     | MCTS (PPO)      | 296          | 2998        \
+----------------------------------------------------------------- \
+\
+Tournament between the ppo after pure rl training then sl training on high mcts simulation self play data then again pure rl training and bots\
+============================================================\
+           FINAL TOURNAMENT SCOREBOARD           \
+============================================================\
+Rank   | Player Name     | GAMES WON    | TOTAL TRICKS\
+-----------------------------------------------------------------\
+#1     | MCTS (PPO)      | 414          | 3669        \
+#2     | Bot 3           | 201          | 3343        \
+#3     | Bot 1           | 215          | 3003        \
+#4     | Bot 2           | 170          | 2985        \
+-----------------------------------------------------------------\
+\
+}
