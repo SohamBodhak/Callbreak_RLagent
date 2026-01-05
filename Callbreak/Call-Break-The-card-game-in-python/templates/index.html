@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Callbreak Pro AI</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        :root {
+            --table-color: #2e8b57;
+            --card-width: 80px;
+            --card-height: 110px;
+        }
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        #game-table {
+            width: 900px;
+            height: 600px;
+            background-color: var(--table-color);
+            border-radius: 150px;
+            border: 15px solid #8b4513;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+            position: relative;
+            display: grid;
+            grid-template-areas: 
+                ". top ."
+                "left center right"
+                ". bottom .";
+            grid-template-rows: 1fr 2fr 1fr;
+            grid-template-columns: 1fr 2fr 1fr;
+        }
+
+        /* --- PLAYER ZONES --- */
+        .player-zone {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        #top-bot { grid-area: top; flex-direction: column; }
+        #left-bot { grid-area: left; flex-direction: row-reverse; writing-mode: vertical-lr; }
+        #right-bot { grid-area: right; writing-mode: vertical-lr; }
+        #human-zone { grid-area: bottom; align-items: flex-end; padding-bottom: 20px;}
+
+        /* --- CARD DESIGN --- */
+        .card {
+            width: var(--card-width);
+            height: var(--card-height);
+            background: white;
+            border-radius: 8px;
+            color: black;
+            font-weight: bold;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px;
+            box-sizing: border-box;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+            margin-left: -30px; /* Overlap effect */
+            position: relative;
+        }
+        .card:hover {
+            transform: translateY(-20px) scale(1.1);
+            z-index: 100;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .card.red { color: #d40000; }
+        .card.black { color: #000; }
+        
+        .card-center {
+            font-size: 40px;
+            align-self: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .card-corner { font-size: 16px; }
+        .card-corner.bottom { transform: rotate(180deg); align-self: flex-end; }
+
+        /* Bot Cards (Back Side) */
+        .card-back {
+            background: repeating-linear-gradient(45deg, #b22222, #b22222 10px, #8b0000 10px, #8b0000 20px);
+            border: 2px solid white;
+        }
+
+        /* --- TRICK AREA (Center) --- */
+        #trick-area {
+            grid-area: center;
+            position: relative;
+        }
+        .trick-card {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: var(--card-width);
+            height: var(--card-height);
+            transform: translate(-50%, -50%);
+            transition: all 0.5s ease-out;
+        }
+        /* Specific positions for played cards */
+        .played-p0 { transform: translate(-50%, 10%); } /* Human */
+        .played-p1 { transform: translate(20%, -50%) rotate(-10deg); } /* Right */
+        .played-p2 { transform: translate(-50%, -110%); } /* Top */
+        .played-p3 { transform: translate(-120%, -50%) rotate(10deg); } /* Left */
+
+        /* --- UI OVERLAYS --- */
+        #status-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 30px;
+            border-radius: 20px;
+            font-size: 20px;
+        }
+        #scoreboard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        #error-msg {
+            position: absolute;
+            bottom: 150px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4500;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+<div id="status-bar">Waiting to Start...</div>
+<div id="error-msg">Invalid Move</div>
+
+<div id="scoreboard">
+    <div>You: <span id="sc-0">0</span></div>
+    <div>Right: <span id="sc-1">0</span></div>
+    <div>Top: <span id="sc-2">0</span></div>
+    <div>Left: <span id="sc-3">0</span></div>
+</div>
+
+<div id="game-table">
+    <div id="top-bot" class="player-zone"></div>
+    <div id="left-bot" class="player-zone"></div>
+    <div id="right-bot" class="player-zone"></div>
+    
+    <div id="trick-area"></div>
+    
+    <div id="human-zone" class="player-zone">
+        </div>
+</div>
+
+<button onclick="startGame()" style="position: absolute; bottom: 20px; right: 20px; padding: 15px 30px; font-size: 18px; cursor: pointer;">Start Game</button>
+
+<script>
+    const socket = io();
+    const suits = {'S': '♠', 'H': '♥', 'D': '♦', 'C': '♣'};
+
+    function startGame() {
+        socket.emit('start_game');
+        document.querySelector('button').style.display = 'none';
+    }
+
+    socket.on('status_update', (data) => {
+        document.getElementById('status-bar').innerText = data.msg;
+    });
+
+    socket.on('error_msg', (data) => {
+        const el = document.getElementById('error-msg');
+        el.innerText = data.msg;
+        el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 2000);
+    });
+
+    socket.on('game_update', (state) => {
+        renderBoard(state);
+    });
+
+    function renderBoard(state) {
+        // 1. Update Scores
+        state.scores.forEach((sc, i) => document.getElementById(`sc-${i}`).innerText = sc);
+
+        // 2. Render Human Hand
+        const handDiv = document.getElementById('human-zone');
+        handDiv.innerHTML = '';
+        state.human_hand.forEach(card => {
+            const el = createCard(card);
+            el.onclick = () => socket.emit('human_move', {card_idx: card.raw_idx});
+            handDiv.appendChild(el);
+        });
+
+        // 3. Render Bots (Backs)
+        updateBotHand('right-bot', state.bot_hand_counts[0]); // Player 1
+        updateBotHand('top-bot', state.bot_hand_counts[1]);   // Player 2
+        updateBotHand('left-bot', state.bot_hand_counts[2]);  // Player 3
+
+        // 4. Render Trick
+        const trickDiv = document.getElementById('trick-area');
+        trickDiv.innerHTML = '';
+        state.trick.forEach((card, idx) => {
+            if (card) {
+                const el = createCard(card);
+                el.classList.add('trick-card');
+                el.classList.add(`played-p${idx}`);
+                trickDiv.appendChild(el);
+            }
+        });
+
+        // 5. Game Over
+        if (state.game_over) {
+            const msg = state.winner === 0 ? "YOU WON!" : `Bot ${state.winner} Won!`;
+            document.getElementById('status-bar').innerText = `GAME OVER: ${msg}`;
+            document.getElementById('status-bar').style.backgroundColor = state.winner === 0 ? 'gold' : 'red';
+            document.querySelector('button').style.display = 'block';
+            document.querySelector('button').innerText = "Play Again";
+        }
+    }
+
+    function createCard(data) {
+        const div = document.createElement('div');
+        div.className = `card ${data.color}`;
+        div.innerHTML = `
+            <div class="card-corner">${data.rank}${suits[data.suit]}</div>
+            <div class="card-center">${suits[data.suit]}</div>
+            <div class="card-corner bottom">${data.rank}${suits[data.suit]}</div>
+        `;
+        return div;
+    }
+
+    function updateBotHand(divId, count) {
+        const div = document.getElementById(divId);
+        div.innerHTML = '';
+        for(let i=0; i<count; i++) {
+            const back = document.createElement('div');
+            back.className = 'card card-back';
+            back.style.marginLeft = '-60px'; // Tight overlap for bots
+            div.appendChild(back);
+        }
+    }
+</script>
+
+</body>
+</html>
