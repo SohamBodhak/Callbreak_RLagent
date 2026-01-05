@@ -36,7 +36,7 @@ Ensure you have the following Python libraries installed in your environment:
 * `sb3-contrib`
 '''bash
 pip install -r requirements.txt
-'''
+
 
 ### Required Project Files
 The `app_v6_algo.py` script relies on these local Python modules (found in your repository):
